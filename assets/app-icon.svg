@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Apache IoTDB Manager">
+  <defs>
+    <linearGradient id="background" x1="28" y1="18" x2="228" y2="242" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2787F5"/>
+      <stop offset="1" stop-color="#0B4AA3"/>
+    </linearGradient>
+    <linearGradient id="database" x1="128" y1="53" x2="128" y2="202" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D8EBFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#background)"/>
+  <path d="M204 78c0 15-34 27-76 27S52 93 52 78v100c0 15 34 27 76 27s76-12 76-27V78Z" fill="url(#database)"/>
+  <ellipse cx="128" cy="78" rx="76" ry="27" fill="#F8FCFF"/>
+  <ellipse cx="128" cy="78" rx="58" ry="17" fill="#82BFFF"/>
+  <ellipse cx="128" cy="78" rx="42" ry="10" fill="#1769E0"/>
+  <path d="M52 119c0 15 34 27 76 27s76-12 76-27M52 157c0 15 34 27 76 27s76-12 76-27" fill="none" stroke="#1769E0" stroke-width="10" stroke-linecap="round"/>
+  <text x="128" y="239" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="0" text-anchor="middle">Apache IoTDB</text>
+</svg>
