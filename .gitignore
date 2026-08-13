@@ -1,5 +1,7 @@
 MiniApacheIoTDBManager.exe
+MiniApacheIoTDBManager-v*-source.zip
 rsrc_windows_amd64.syso
 iotdb-manage.json
 *.log
 .DS_Store
+third_party/**/target/

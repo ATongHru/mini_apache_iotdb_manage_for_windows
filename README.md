@@ -7,9 +7,11 @@
 - 使用 Apache IoTDB 官方 Go Session 客户端连接 IoTDB RPC 服务；默认连接地址为 `127.0.0.1:6667`。
 - 浏览 `SHOW DATABASES` 和 `SHOW DEVICES` 的结果；点击设备可打开数据浏览页并查询该设备的数据。
 - SQL 控制台支持多个标签页，并可执行 `SELECT`、`SHOW`、`DESCRIBE`、`EXPLAIN`、`WITH` 等查询语句；查询结果以表格展示。
+- 设备数据浏览与 SQL 结果均支持首页/末页跳转、上一页/下一页、调整每页行数；设备总记录数异步统计后可跳转末页。
 - 查询结果支持时间条件筛选、分页浏览、调整每页行数，以及复制为 TSV。
 - 可直接执行 `INSERT`、`CREATE TIMESERIES`、`DELETE TIMESERIES`、`DELETE FROM`、`CREATE/DROP DATABASE`、`SET TTL` 等写入、删除和模式管理 SQL。
-- 支持保存常用连接和 SQL 查询；连接信息仅保存在运行该程序的 Windows 用户配置目录中。
+- 连接对话框支持测试连接、保存/编辑/删除常用连接，以及保存与快速载入 SQL 查询；连接信息仅保存在运行该程序的 Windows 用户配置目录中。
+- 侧边栏合并显示连接状态与当前目标；已连接时显示「已连接」与「退出连接」并排按钮；退出连接后会再次弹出登录对话框。
 - 界面可查看本地管理服务的 CPU 与内存占用，并提供深色模式。
 - 默认仅监听 `127.0.0.1:52014`，不会向局域网暴露管理界面；启动后会在 Chromium 系浏览器中打开独立窗口。
 
@@ -18,7 +20,7 @@
 1. 从 [Releases](https://github.com/ATongHru/mini_apache_iotdb_manage_for_windows/releases) 下载 `MiniApacheIoTDBManager.exe`。
 2. 双击运行 `MiniApacheIoTDBManager.exe`。控制台窗口会保留，关闭该窗口即可停止本地服务。
 3. 浏览器会自动打开 `http://127.0.0.1:52014`。
-4. 在“连接 IoTDB”窗口填写服务器地址、端口、用户名和密码：
+4. 在“连接 IoTDB”窗口填写服务器地址、端口、用户名和密码；可先点击「测试连接」验证参数：
    - 主机默认：`127.0.0.1`
    - 端口默认：`6667`
    - 用户名默认：`root`
@@ -68,7 +70,7 @@ MiniApacheIoTDBManager.exe -open-browser=false
 在 Windows 中双击或运行：
 
 ```bat
-normal_build.bat
+build.bat
 ```
 
 脚本会强制使用项目内的本地依赖，不会访问网络。构建成功后生成 `MiniApacheIoTDBManager.exe`。
@@ -85,7 +87,7 @@ go build -mod=mod -trimpath -ldflags="-s -w" -o MiniApacheIoTDBManager.exe .
 
 - **数据修改：** 写入、删除、TTL 设置和模式变更会立即提交给目标 IoTDB 实例。请先备份，并在测试环境验证 SQL。
 - **查询：** 服务端单次最多返回 500 行；可在请求中选择最多 1000 行。界面会继续对结果进行分页显示。
-- **设备浏览：** 对象树为 `SHOW DATABASES` 和 `SHOW DEVICES` 的当前结果，单次各最多加载 300 行；大型实例请优先使用 SQL 控制台进行定向查询。
+- **设备浏览：** 对象树为 `SHOW DATABASES` 和 `SHOW DEVICES` 的当前结果，单次各最多加载 300 行；大型实例请优先使用 SQL 控制台进行定向查询。设备总记录数通过 `COUNT_TIME` 异步统计，统计完成前末页跳转会等待或提示。
 - **SQL 执行：** 查询超时为 60 秒。复杂查询、全库扫描和写入操作的实际资源消耗由 IoTDB 服务端决定。
 - **保存的连接：** 配置文件位于 `%USERPROFILE%\.mini-manage\iotdb-manage.json`，其中包含保存的连接密码明文。请仅在受信任的个人 Windows 帐户中使用，避免在共享电脑上保存连接信息。
 - **网络：** 本地管理界面没有额外的登录层，安全边界依赖默认的回环监听和 Windows 用户帐户权限。
@@ -103,7 +105,7 @@ go build -mod=mod -trimpath -ldflags="-s -w" -o MiniApacheIoTDBManager.exe .
 .
 ├── main.go                   # Go 后端、HTTP API 与嵌入式静态页面
 ├── web/index.html            # 本地 Web 管理界面
-├── normal_build.bat          # 可提交的离线 Windows 构建脚本
+├── build.bat                 # 可提交的离线 Windows 构建脚本
 ├── third_party/iotdb-client-go # Apache IoTDB Go 客户端源码
 ├── third_party/thrift        # Apache Thrift 源码
 ├── LICENSE                   # 本项目 MIT 许可证

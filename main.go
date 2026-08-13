@@ -113,6 +113,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/health", s.handleHealth)
 	mux.HandleFunc("/api/connect", s.handleConnect)
+	mux.HandleFunc("/api/test-connection", s.handleTestConnection)
 	mux.HandleFunc("/api/disconnect", s.handleDisconnect)
 	mux.HandleFunc("/api/sql", s.handleSQL)
 	mux.HandleFunc("/api/browse", s.handleBrowse)
@@ -319,16 +320,7 @@ func (s *server) handleResources(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"backendCPUPercent": cpuPercent, "backendMemoryPercent": memoryPercent, "backendMemoryMB": float64(workingSet) / (1024 * 1024)})
 }
 
-func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeMethodNotAllowed(w)
-		return
-	}
-	var req connectionRequest
-	if err := decodeJSON(r, &req); err != nil {
-		writeError(w, http.StatusBadRequest, err)
-		return
-	}
+func normalizeConnectionRequest(req *connectionRequest) {
 	req.Host = strings.TrimSpace(req.Host)
 	req.Port = strings.TrimSpace(req.Port)
 	req.User = strings.TrimSpace(req.User)
@@ -341,6 +333,40 @@ func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
 	if req.User == "" {
 		req.User = "root"
 	}
+}
+
+func (s *server) handleTestConnection(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeMethodNotAllowed(w)
+		return
+	}
+	var req connectionRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	normalizeConnectionRequest(&req)
+
+	session := client.NewSession(&client.Config{Host: req.Host, Port: req.Port, UserName: req.User, Password: req.Password, FetchSize: 500})
+	if err := session.Open(false, 5000); err != nil {
+		writeError(w, http.StatusBadGateway, fmt.Errorf("连接 IoTDB 失败：%w", err))
+		return
+	}
+	defer session.Close()
+	writeJSON(w, http.StatusOK, map[string]any{"message": "连接测试成功", "host": req.Host, "port": req.Port})
+}
+
+func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeMethodNotAllowed(w)
+		return
+	}
+	var req connectionRequest
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	normalizeConnectionRequest(&req)
 
 	session := client.NewSession(&client.Config{Host: req.Host, Port: req.Port, UserName: req.User, Password: req.Password, FetchSize: 500})
 	if err := session.Open(false, 5000); err != nil {
@@ -527,16 +553,32 @@ func (s *server) handleBrowse(w http.ResponseWriter, r *http.Request) {
 		writeMethodNotAllowed(w)
 		return
 	}
-	databases, dbErr := s.execute("SHOW DATABASES", 300)
-	devices, devErr := s.execute("SHOW DEVICES", 300)
-	if dbErr != nil && devErr != nil {
-		writeError(w, http.StatusBadRequest, dbErr)
+
+	database := strings.TrimSpace(r.URL.Query().Get("database"))
+	if database == "" {
+		databases, err := s.execute("SHOW DATABASES", 300)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"databases": databases.Rows, "databaseColumns": databases.Columns,
+			"devices": []any{}, "deviceColumns": []string{},
+		})
+		return
+	}
+	if !validIoTDBPath(database) {
+		writeError(w, http.StatusBadRequest, errors.New("数据库路径无效"))
+		return
+	}
+
+	devices, err := s.execute(fmt.Sprintf("SHOW DEVICES %s.**", database), 300)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"databases": databases.Rows, "databaseColumns": databases.Columns,
 		"devices": devices.Rows, "deviceColumns": devices.Columns,
-		"warnings": joinErrors(dbErr, devErr),
 	})
 }
 
